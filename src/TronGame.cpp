@@ -3,12 +3,15 @@
 #include <iostream>
 
 //compilando shaders
-const char* vertexShaderSource = "#version 330 core\n"
-	"layout (location = 0) in vec3 aPos;\n"
-	"void main()\n"
-	"{\n"
-	"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-	"}\0";
+const char* vertexShaderSource = R"(
+	#version 330 core
+	layout (location = 0) in vec3 aPos;
+
+	void main()
+	{
+		gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+	}
+)";
 
 const char* fragmentShaderSource = R"(
 	#version 330 core
@@ -19,7 +22,6 @@ const char* fragmentShaderSource = R"(
 		FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
 	} 
 )";
-
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -52,7 +54,7 @@ int main()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
-	
+
 	//criação do vertex object, representado por um ID
 	unsigned int vertexShader;
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -75,7 +77,7 @@ int main()
 	glLinkProgram(shaderProgram);
 
 	//Ativa os resultados do shaderprogram que foi linkado
-	glUseProgram(shaderProgram);
+	//glUseProgram(shaderProgram);
 
 	//Uma vez que esses shaders foram linkados no shader program, não há mais necessidade de guardar o vertex e o fragment, logo, é boa prática deletar
 	glDeleteShader(vertexShader);
@@ -84,61 +86,56 @@ int main()
 	//Os Vertex Shaders são estruturas versáteis, qyualquer input pode ser representado como um vertex attribute, permite flexibilidade, mas é preciso especificar como o OpenGL deve interpretar esses atributos
 	//a função glVertexAttribPointer, especifica como essa interpretação será feita
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glUseProgram(shaderProgram);
-	//agora é necessário ativar os vertex attributes
-	//Setup VBO Gerador de buffers para armazenar na GPU, criar fora do laço de janela, porque ficará armazenado na memória constantemente enquanto houver espaço.
-	unsigned int VBO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);;
 
 	//configurações da janela
 	glViewport(0, 0, 800, 600);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	
 	//Podem haver multiplas VBOs para chamadas de novos objetos
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	//glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	//salvar vertex atributes como ponteiros é bom, porque só é preciso fazer a chamada uma vez, após isso apenas é necessário bindar o correto VAO
 	//seta os vertex attributes como ponteiros
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glUseProgram(shaderProgram);
-
-	//guarda o VAO
-	unsigned int VAO;
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	//glEnableVertexAttribArray(0);
+	//glUseProgram(shaderProgram);
+	
+	//VBO e VAO caminham juntos, ao criar um objeto eu teria que inicializar um VBO todas a vezes, e atualizar todas as vezes, então, para otimizar, crio um VBO, e o VAO acessa esse VBO bidando o buffer e gerando o objeto novo
+	unsigned int VBO, VAO;
 	glGenVertexArrays(1, &VAO);
-
+	glGenBuffers(1, &VBO);
 	glBindVertexArray(VAO);
-	// 2. copy our vertices array in a buffer for OpenGL to use
+
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	// 3. then set our vertex attributes pointers
+
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindVertexArray(0);
 
 	//laço que mantem a janela do jogo rodando (igual fup)
 	while (!glfwWindowShouldClose(window))
 	{
 		//Processa os Inputs(Culpa do Pedro)
 		processInput(window);
+		glfwPollEvents();//Controla as entradas do teclado e mouse.
 		//informações de renderização
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//Controle de entradas e buffers
-		glfwSwapBuffers(window);//Faz a troca dos Buffers que vão desenhar os elementos na tela
-		glfwPollEvents();//Controla as entradas do teclado e mouse.
-		
 		glUseProgram(shaderProgram);
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
-
-		glUseProgram(shaderProgram);
-		glBindVertexArray(VAO);
+		
+		//Controle de entradas e buffers
+		//DEIXAR ESTE AQUI SEMPRE S E M P R E AO FINAL DO LAÇO
+		glfwSwapBuffers(window);//Faz a troca dos Buffers que vão desenhar os elementos na tela
 	}
+
 	glfwTerminate();
 	return 0;
 }
