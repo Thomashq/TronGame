@@ -1,40 +1,18 @@
 ﻿#include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <Graphical/Textures/stb_image.h>
+#include <filesystem>
+#include <Graphical/Shaders/Shader.h>
+
 #include <iostream>
 
 //compilando shaders
-const char* vertexShaderSource = R"(
-	#version 330 core
-	layout (location = 0) in vec3 aPos;
-
-	void main()
-	{
-		gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-	}
-)";
-
-const char* fragmentShaderSource = R"(
-	#version 330 core
-	out vec4 FragColor;
-
-	void main()
-	{
-		FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-	} 
-)";
-
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 int main()
 {
-	float vertices[] = {
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
-	};
-
-	//Setup  do tamanho da janela
+	//Setup do tamanho da janela
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -54,87 +32,151 @@ int main()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
-
-	//criação do vertex object, representado por um ID
-	unsigned int vertexShader;
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	//compila o objeto do shader que já foi associado ao shader source anterioremente
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
 	
-	//FragmentShaders cuida da renderização de cores na tela, as configurações dele vão calcular o pixel output de cores dos pixels
-	unsigned int fragmentShader;
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
-
-	//o Shader Program vai linkar diferentes shader objects e criar um grande shader combinado
-	unsigned int shaderProgram;
-	shaderProgram = glCreateProgram();
-	//Junta os shaders pelo glAtach e link pelo glLink
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-
-	//Ativa os resultados do shaderprogram que foi linkado
-	//glUseProgram(shaderProgram);
-
-	//Uma vez que esses shaders foram linkados no shader program, não há mais necessidade de guardar o vertex e o fragment, logo, é boa prática deletar
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-	//Os Vertex Shaders são estruturas versáteis, qyualquer input pode ser representado como um vertex attribute, permite flexibilidade, mas é preciso especificar como o OpenGL deve interpretar esses atributos
-	//a função glVertexAttribPointer, especifica como essa interpretação será feita
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);;
+	//acessa o arquivo de shader(deveria)
+	Shader ourShader("4.2.texture.vs", "4.2.texture.fs");
 
 	//configurações da janela
 	glViewport(0, 0, 800, 600);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	
-	//Podem haver multiplas VBOs para chamadas de novos objetos
-	//glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	//salvar vertex atributes como ponteiros é bom, porque só é preciso fazer a chamada uma vez, após isso apenas é necessário bindar o correto VAO
-	//seta os vertex attributes como ponteiros
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	//glEnableVertexAttribArray(0);
-	//glUseProgram(shaderProgram);
-	
+
+	//vértices do TRIANGULO e um conjunto de dados úteis para a geração da primitiva 
+	float vertices[] = {
+		// positions          // colors           // texture coords
+		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+	};
+
+	//tamanho da textura
+	unsigned int indices[] = {
+	   0, 1, 3, // first triangle
+	   1, 2, 3  // second triangle
+	};
+
 	//VBO e VAO caminham juntos, ao criar um objeto eu teria que inicializar um VBO todas a vezes, e atualizar todas as vezes, então, para otimizar, crio um VBO, e o VAO acessa esse VBO bidando o buffer e gerando o objeto novo
-	unsigned int VBO, VAO;
+	unsigned int VBO, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	//Os Vertex Shaders são estruturas versáteis, qualquer input pode ser representado como um vertex attribute, permite flexibilidade, mas é preciso especificar como o OpenGL deve interpretar esses atributos
+	//a função glVertexAttribPointer, especifica como essa interpretação será feita
+	//Esse atributo vertex configura a posição do triângulo na tela
+	//no envio do valor de positions eu não quero ler colors, logo no 5 parâmetro, eu quero pular os argumentos de cor, para ler somente os de position, por isso 6*sizeof(float)
+	//ultimo valor somado ao penultimo(definido no *sizeof(float), é 6 pq eu mandei 6 parâmetros, se fosse 8 parâmetros de dados, seria 6*sizeof(float)
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	//o 0 foi setado no layout lá no vertexShader
 	glEnableVertexAttribArray(0);
+	//ao adicionar um novo atributo de cor, é necessário gerar um novo de atributo do VBO, representando uma configuração de cor
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	//o 1 foi setado no layout lá no vertexShader
+	glEnableVertexAttribArray(1);
+	
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glBindVertexArray(0);
 
+	unsigned int texture1, texture2;
+	// texture 1
+	// ---------
+	glGenTextures(1, &texture1);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// load image, create texture and generate mipmaps
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
+	// The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+	unsigned char* data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data);
+	// texture 2
+	// ---------
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// load image, create texture and generate mipmaps
+	data = stbi_load("mondongo.jpg", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		// note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data);
+
+	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+	// -------------------------------------------------------------------------------------------
+	ourShader.use(); // don't forget to activate/use the shader before setting uniforms!
+	// either set it manually like so:
+	glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 0);
+	// or set it via the texture class
+	ourShader.setInt("texture2", 1);
+
+
 	//laço que mantem a janela do jogo rodando (igual fup)
 	while (!glfwWindowShouldClose(window))
 	{
-		//Processa os Inputs(Culpa do Pedro)
 		processInput(window);
-		glfwPollEvents();//Controla as entradas do teclado e mouse.
-		//informações de renderização
+		// render
+		// ------
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shaderProgram);
+		// bind textures on corresponding texture units
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+
+		// render container
+		ourShader.use();
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		
 		//Controle de entradas e buffers
 		//DEIXAR ESTE AQUI SEMPRE S E M P R E AO FINAL DO LAÇO
 		glfwSwapBuffers(window);//Faz a troca dos Buffers que vão desenhar os elementos na tela
+		glfwPollEvents();
 	}
+
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteBuffers(1, &EBO);
 
 	glfwTerminate();
 	return 0;
