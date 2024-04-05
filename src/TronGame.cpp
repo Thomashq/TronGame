@@ -4,6 +4,9 @@
 #include <filesystem>
 #include <Graphical/Shaders/Shader.h>
 
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
+
 #include <iostream>
 
 //compilando shaders
@@ -18,7 +21,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "Tron Game CG", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(600, 600, "Tron Game CG", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -37,7 +40,7 @@ int main()
 	Shader ourShader("4.2.texture.vs", "4.2.texture.fs");
 
 	//configurações da janela
-	glViewport(0, 0, 800, 600);
+	glViewport(0, 0, 600, 600);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	//vértices do TRIANGULO e um conjunto de dados úteis para a geração da primitiva 
@@ -107,7 +110,7 @@ int main()
 	unsigned char* data = stbi_load("container.jpg", &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
@@ -130,7 +133,7 @@ int main()
 	if (data)
 	{
 		// note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
@@ -147,6 +150,16 @@ int main()
 	// or set it via the texture class
 	ourShader.setInt("texture2", 1);
 
+	// Capitulo de transformações
+
+	//// Quando rotacionar pelo angulo X a imagem vai virar uma bandeja
+	//glm::mat4 transform = glm::mat4(1.0f);
+	//transform = glm::rotate(transform, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+	//transform = glm::scale(transform, glm::vec3(0.5, 0.5, 0.5));
+
+	//// passando a matriz de transformação da CPU para a GPU
+	//unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
+	//glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
 
 	//laço que mantem a janela do jogo rodando (igual fup)
 	while (!glfwWindowShouldClose(window))
@@ -162,6 +175,14 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
+
+		std::cout << (float)glfwGetTime() << std::endl;
+		glm::mat4 transform = glm::mat4(1.0f);
+		transform = glm::rotate(transform, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+
+		// passando a matriz de transformação da CPU para a GPU
+		unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
 
 		// render container
 		ourShader.use();
