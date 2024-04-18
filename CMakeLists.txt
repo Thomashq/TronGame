@@ -2,18 +2,15 @@
 
 project(TronGame)
 
-add_executable(TronGame)
+file(GLOB SOURCES "src/*.cpp" "src/*.c" "include/*.hpp" "include/*.h" "libs/*.cpp" "libs/*.h") 
 
-target_sources(TronGame 
-    PRIVATE
-    "src/TronGame.cpp"
-    "include/Graphical/Shaders/Shader.h" "src/Graphical/Textures/StbImages.cpp")
+add_executable(TronGame ${SOURCES})
 
-configure_file("include/Graphical/Shaders/ShaderFiles/4.2.texture.vs" "4.2.texture.vs" COPYONLY)
-configure_file("include/Graphical/Shaders/ShaderFiles/4.2.texture.fs" "4.2.texture.fs" COPYONLY)
+# configure_file("include/Graphical/Shaders/ShaderFiles/4.2.texture.vs" "4.2.texture.vs" COPYONLY)
+# configure_file("include/Graphical/Shaders/ShaderFiles/4.2.texture.fs" "4.2.texture.fs" COPYONLY)
 
-configure_file("include/Graphical/Textures/Resources/container.jpg" "container.jpg" COPYONLY)
-configure_file("include/Graphical/Textures/Resources/mondongo.jpg" "mondongo.jpg" COPYONLY)
+# configure_file("include/Graphical/Textures/Resources/container.jpg" "container.jpg" COPYONLY)
+# configure_file("include/Graphical/Textures/Resources/mondongo.jpg" "mondongo.jpg" COPYONLY)
 
 include(FetchContent)
 
@@ -42,7 +39,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glad)
 
-add_library(glad "${glad_SOURCE_DIR}/src/glad.c" "${glad_SOURCE_DIR}/include/glad/glad.h"   "include/Graphical/Shaders/Shader.h" "src/Graphical/Textures/StbImages.cpp")
+add_library(glad "${glad_SOURCE_DIR}/src/glad.c" "${glad_SOURCE_DIR}/include/glad/glad.h")
 target_include_directories(glad PUBLIC "${glad_SOURCE_DIR}/include")
 
 find_package(OpenGL REQUIRED)
