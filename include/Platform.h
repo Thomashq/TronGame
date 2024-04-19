@@ -22,6 +22,8 @@ public:
 
     bool WindowIsRunning();
 
+    float GetTime();
+
     void Stop();
 
 private:

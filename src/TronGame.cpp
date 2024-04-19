@@ -17,7 +17,6 @@ int main()
 	TronEngine *game = new TronEngine(platform);
 
 	game->Init();
-
 	game->Run();
 
 	return 0;

@@ -9,8 +9,8 @@ add_executable(TronGame ${SOURCES})
 # configure_file("include/Graphical/Shaders/ShaderFiles/4.2.texture.vs" "4.2.texture.vs" COPYONLY)
 # configure_file("include/Graphical/Shaders/ShaderFiles/4.2.texture.fs" "4.2.texture.fs" COPYONLY)
 
-# configure_file("include/Graphical/Textures/Resources/container.jpg" "container.jpg" COPYONLY)
-# configure_file("include/Graphical/Textures/Resources/mondongo.jpg" "mondongo.jpg" COPYONLY)
+
+file(COPY "assets/" DESTINATION "assets/")
 
 include(FetchContent)
 

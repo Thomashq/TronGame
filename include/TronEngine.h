@@ -1,4 +1,5 @@
 #pragma once
+#include "Globals.h"
 #include "Platform.h"
 
 enum class TronState

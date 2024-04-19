@@ -76,6 +76,11 @@ bool Platform::WindowIsRunning()
     return isRunning;
 }
 
+float Platform::GetTime()
+{
+    return glfwGetTime();
+}
+
 void Platform::Stop()
 {
     isRunning = false;

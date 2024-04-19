@@ -1,4 +1,6 @@
+#include <iostream>
 #include "TronEngine.h"
+#include "Globals.h"
 
 TronEngine::TronEngine(Platform *platform)
 {
@@ -9,9 +11,10 @@ void TronEngine::Run()
 {
     while (this->platform->WindowIsRunning())
 	{
+        Globals::SetDeltaTime(this->platform->GetTime());
 		this->platform->ProcessInput();
 
-
+        this->Render();
 
 		this->platform->Update();
 	}
@@ -23,7 +26,12 @@ void TronEngine::Init()
 {
     this->currentState = TronState::GameLoop;
 
-    // Will load Models, Shaders and whatever needs a file to read with ResourceManager
+    // Will load Entities, Shaders and whatever needs a file to read with ResourceManager
+    Globals::shaders.insert({"standard", new Shader()});
+    Globals::shaders["standard"]->Compile("assets/shaders/default.vs", "assets/shaders/default.fs");
+
+
+
 }
 
 void TronEngine::Stop()
@@ -33,4 +41,9 @@ void TronEngine::Stop()
     // Dealocate all Models and Shaders
 
     this->platform->Stop();
+}
+
+void TronEngine::Render()
+{
+
 }
