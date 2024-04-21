@@ -15,23 +15,22 @@ void Shader::Compile(const char *vertexPath, const char *fragmentPath)
 
     shaderFile.open(vertexPath, std::fstream::in);
     if(shaderFile.fail())
-    {
-        std::cout << "File Path: " << vertexPath << " failed to open." << std::endl;
-    } 
+        std::cout << "Vertex File Path: " << vertexPath << " failed to open." << std::endl;
+    
     std::stringstream vertexStream;
     vertexStream << shaderFile.rdbuf();
-    const char* vertexSource = vertexStream.str().c_str();
+    std::string vertexStr = vertexStream.str();
+    const char* vertexSource = vertexStr.c_str();
     shaderFile.close();
-    std::fstream shaderFile;
-
+   
     shaderFile.open(fragmentPath, std::fstream::in);
     if(shaderFile.fail())
-    {
-        std::cout << "File Path: " << fragmentPath << " failed to open." << std::endl;
-    } 
+        std::cout << "Fragment File Path: " << fragmentPath << " failed to open." << std::endl;
+    
     std::stringstream fragmentStream;
     fragmentStream << shaderFile.rdbuf();
-    const char* fragmentSource = fragmentStream.str().c_str();
+    std::string fragmentStr = fragmentStream.str();
+    const char* fragmentSource = fragmentStr.c_str();
     shaderFile.close();
 
     unsigned int shaderVertex, shaderFragment;

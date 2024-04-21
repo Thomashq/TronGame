@@ -10,7 +10,7 @@
 
 int main()
 {
-	Platform *platform = new Platform(600, 600, "TronGame btw");
+	Platform *platform = new Platform(1280, 720, "TronGame btw");
 
 	platform->Init();
 

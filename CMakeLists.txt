@@ -6,14 +6,12 @@ file(GLOB SOURCES "src/*.cpp" "src/*.c" "include/*.hpp" "include/*.h" "libs/*.cp
 
 add_executable(TronGame ${SOURCES})
 
-# configure_file("include/Graphical/Shaders/ShaderFiles/4.2.texture.vs" "4.2.texture.vs" COPYONLY)
-# configure_file("include/Graphical/Shaders/ShaderFiles/4.2.texture.fs" "4.2.texture.fs" COPYONLY)
-
-
-file(COPY "assets/" DESTINATION "assets/")
+file(COPY "assets/shaders" DESTINATION "assets/")
+file(COPY "assets/models" DESTINATION "assets/")
 
 include(FetchContent)
 
+# GLFW
 FetchContent_Declare(
     glfw  
     GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -26,12 +24,22 @@ set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "Build the GLFW documentation")
 set(GLFW_INSTALL OFF CACHE INTERNAL "Generate installation target")
 FetchContent_MakeAvailable(glfw)
 
+# GLM
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
 )
 FetchContent_MakeAvailable(glm)
 
+# ASSIMP
+FetchContent_Declare(
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(assimp)
+
+# GLAD
 FetchContent_Declare(
     glad
     GIT_REPOSITORY https://github.com/Dav1dde/glad.git
@@ -46,14 +54,15 @@ find_package(OpenGL REQUIRED)
 
 target_include_directories(TronGame 
     PUBLIC
+        libs
         include
         ${glfw_SOURCE_DIR}/include
         ${glm_SOURCE_DIR}
         ${glad_SOURCE_DIR}/include
+        ${assimp_SOURCE_DIR}/include
 
     PRIVATE
         src
-        src/internal
 )
-message(${glad_SOURCE_DIR})
-target_link_libraries(TronGame PRIVATE glfw glad glm::glm ${OPENGL_LIBRARIES})
+message(${assimp_SOURCE_DIR})
+target_link_libraries(TronGame PRIVATE glfw glad glm::glm assimp ${OPENGL_LIBRARIES})

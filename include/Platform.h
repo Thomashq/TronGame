@@ -2,6 +2,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "Camera.h"
 
 class Platform
 {
@@ -16,16 +17,17 @@ public:
 
     bool Init();
 
-    void ProcessInput();
+    void ProcessInput(Camera &camera);
 
     void Update();
 
     bool WindowIsRunning();
 
-    float GetTime();
+    double GetTime();
 
     void Stop();
 
 private:
     GLFWwindow *window = nullptr;
+    
 };
