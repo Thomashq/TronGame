@@ -1,34 +1,26 @@
-#pragma once
-#include "Globals.h"
-#include "Platform.h"
-#include "World.h"
-#include "Camera.h"
+#ifndef TRON_ENGINE_H
+#define TRON_ENGINE_H
 
-enum class TronState
-{
-    GameLoop,
-    Menu,
-    Exit
-};
+#include "Arena.h"
+#include "Moto.h"
+#include <vector>
 
-class TronEngine
-{
+class TronEngine {
 public:
-    Platform *platform;
-    TronState currentState;
-
-    TronEngine(Platform *platform);
+    TronEngine();
     ~TronEngine();
 
     void Init();
-
     void Run();
 
-    void Stop();
-
 private:
+    Arena* arena;
+    std::vector<Moto*> motos;
+
+    void Update(float deltaTime);
     void Render();
 
-    World *world;
-    Camera *camera;
+    GLuint shaderProgram;
 };
+
+#endif 

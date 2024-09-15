@@ -1,65 +1,70 @@
 #include "TronEngine.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <iostream>
-#include "Model.h"
-#include "Entity.h"
 
-TronEngine::TronEngine(Platform *platform)
-{
-    this->platform = platform;
+TronEngine::TronEngine() : arena(nullptr), shaderProgram(0) {}
+
+TronEngine::~TronEngine() {
+    delete arena;
+    for (Moto* moto : motos) {
+        delete moto;
+    }
 }
 
-void TronEngine::Run()
-{
-    while (this->platform->WindowIsRunning())
-	{
-        Globals::SetDeltaTime(this->platform->GetTime());
-		this->platform->ProcessInput(*this->camera);
+void TronEngine::Init() {
+    // Inicializa a arena
+    arena = new Arena();
+    arena->Init();
 
-        std::cout << "Testing  " << Globals::deltaTime << std::endl;
-        this->Render();
+    // Inicializa as motos
+    Moto* moto1 = new Moto(glm::vec3(-2.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));  // Moto vermelha
+    Moto* moto2 = new Moto(glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));   // Moto azul
+    moto1->setupMoto();
+    moto2->setupMoto();
+    motos.push_back(moto1);
+    motos.push_back(moto2);
 
-		this->platform->Update();
-	}
-
-    delete this->platform;
+    // Carregar shaders (shaderProgram deve ser configurado aqui)
+    // shaderProgram = LoadShaders(...);
 }
 
-void TronEngine::Init()
-{
-    this->currentState = TronState::GameLoop;
+void TronEngine::Run() {
+    float deltaTime = 0.0f;
+    float lastTime = static_cast<float>(glfwGetTime());
 
-    this->world = new World(45.0f, (float)this->platform->Width/(float)this->platform->Height, 0.1f, 100.0f);
-    
-    this->camera = new Camera(glm::vec3(0.0f, 0.0f, 3.0f));
+    while (!glfwWindowShouldClose(glfwGetCurrentContext())) {
+        float currentTime = static_cast<float>(glfwGetTime());
+        deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
 
-    glEnable(GL_DEPTH_TEST);
+        // Atualiza o estado do jogo
+        Update(deltaTime);
 
-    // Will load Entities, Shaders and whatever needs a file to read with ResourceManager
-    Globals::shaders.insert({"standard", new Shader()});
-    Globals::shaders["standard"]->Compile("assets/shaders/default.vs", "assets/shaders/default.fs");
+        // Renderiza o cenário
+        Render();
 
-    Globals::entities.insert({"tallBuilding", new Entity("assets/models/TallBuilding01/TallBuilding01.obj")});
-
+        // Troca de buffers
+        glfwSwapBuffers(glfwGetCurrentContext());
+        glfwPollEvents();
+    }
 }
 
-void TronEngine::Stop()
-{
-    this->currentState = TronState::Exit;
-    
-    // Dealocate all Models and Shaders
-
-    this->platform->Stop();
+void TronEngine::Update(float deltaTime) {
+    // Atualiza o movimento das motos (se necessário)
+    for (Moto* moto : motos) {
+        moto->moveForward(deltaTime);
+    }
 }
 
-void TronEngine::Render()
-{
-    glClearColor(48.f/255.f, 70.f/255.f, 116.f/255.f, 1.0f);
+void TronEngine::Render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    Globals::shaders["standard"]->Use();
+    // Renderiza a arena
+    arena->Render(shaderProgram);
 
-    this->world->Draw(*Globals::shaders["standard"]);    
-    this->camera->Draw(*Globals::shaders["standard"]);
-
-    Globals::entities["tallBuilding"]->Draw(*Globals::shaders["standard"]);
+    // Renderiza as motos
+    for (Moto* moto : motos) {
+        moto->renderMoto(shaderProgram);
+    }
 }
